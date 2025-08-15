@@ -17,15 +17,15 @@
             "name": "Insert into MySQL",
             "type": "mysql:execute",
             "parameters": {
-                "host": "{{MYSQL_HOST}}",
-                "port": "{{MYSQL_PORT}}",
-                "database": "{{MYSQL_DB}}",
-                "user": "{{MYSQL_USER}}",
-                "password": "{{MYSQL_PASS}}",
+                "host": "{{localhost}}",
+                "port": "{{5432}}",
+                "database": "{{legal_requests_db}}",
+                "user": "{{legal_user}}",
+                "password": "{{StrongPassword123}}",
                 "query": "\nINSERT INTO legal_requests (\n    client_name, case_type, email, document_type, state, timestamp_initiated\n) VALUES (\n    :client_name, :case_type, :email, :document_type, 'initiated', NOW()\n);",
                 "parameters": {
                     "client_name": "{1.Client Name}",
-                    "case_type": "{1.caseType}",
+                    "case_type": "Case Type",
                     "email": "{1.Email}",
                     "document_type": "{1.Document Type}"
                 }
@@ -83,11 +83,11 @@
             "name": "Update MySQL Record",
             "type": "mysql:execute",
             "parameters": {
-                "host": "{{MYSQL_HOST}}",
-                "port": "{{MYSQL_PORT}}",
-                "database": "{{MYSQL_DB}}",
-                "user": "{{MYSQL_USER}}",
-                "password": "{{MYSQL_PASS}}",
+                "host": "{{localhost}}",
+                "port": "{{5432}}",
+                "database": "{{legal_requests_db}}",
+                "user": "{{legal_user}}",
+                "password": "{{StrongPassword123}}",
                 "query": "\nUPDATE legal_requests\nSET state = 'completed',\n    timestamp_completed = NOW()\nWHERE id = :request_id;\n",
                 "parameters": {
                     "request_id": "{2.lastInsertId}"
