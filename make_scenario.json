@@ -1,0 +1,106 @@
+{
+    "name": "Legal Document Request Automation",
+    "modules": [
+        {
+            "id": 1,
+            "name": "Watch New Rows",
+            "type": "google-sheets:watch-rows",
+            "parameters": {
+                "spreadsheetId": "1uWSKTQ3ZM8FaOf7cXPaqWJLWSI4WJdc-q9WHI-sGau0",
+                "sheetName": "Requests",
+                "triggerColumn": "A",
+                "watchInterval": 60
+            }
+        },
+        {
+            "id": 2,
+            "name": "Insert into MySQL",
+            "type": "mysql:execute",
+            "parameters": {
+                "host": "{{MYSQL_HOST}}",
+                "port": "{{MYSQL_PORT}}",
+                "database": "{{MYSQL_DB}}",
+                "user": "{{MYSQL_USER}}",
+                "password": "{{MYSQL_PASS}}",
+                "query": "\nINSERT INTO legal_requests (\n    client_name, case_type, email, document_type, state, timestamp_initiated\n) VALUES (\n    :client_name, :case_type, :email, :document_type, 'initiated', NOW()\n);",
+                "parameters": {
+                    "client_name": "{1.Client Name}",
+                    "case_type": "{1.caseType}",
+                    "email": "{1.Email}",
+                    "document_type": "{1.Document Type}"
+                }
+            }
+        },
+        {
+            "id": 3,
+            "name": "Find Template",
+            "type": "google-drive:search-files",
+            "parameters": {
+                "folderId": "{{1spqGtC-WxemDZVYlSgp6dR8vkfqK2MP4}}",
+                "query": "name contains '{1.Document Type}'",
+                "limit": 1
+            }
+        },
+        {
+            "id": 4,
+            "name": "Fill Document",
+            "type": "google-docs:replace-text",
+            "parameters": {
+                "fileId": "{3.fileId}",
+                "replacements": {
+                    "{{Client Name}}": "{1.Client Name}",
+                    "{{CaseType}}": "{1.caseType}"
+                }
+            }
+        },
+        {
+            "id": 5,
+            "name": "Save to Drive",
+            "type": "google-drive:copy-file",
+            "parameters": {
+                "fileId": "{4.fileId}",
+                "destinationFolderId": "{{1YdUF_mKhS95fr7PdvDZmyZzOkiLcz-f2}}",
+                "newFileName": "{1.Client Name} - {1.caseType}"
+            }
+        },
+        {
+            "id": 6,
+            "name": "Send Email",
+            "type": "gmail:send-email",
+            "parameters": {
+                "to": "{1.Email}",
+                "subject": "Your Legal Document - {1.caseType}",
+                "body": "Hello {1.Client Name},\n\nPlease find your requested document attached.\n\nRegards,\nLegal Team",
+                "attachments": [
+                    {
+                        "fileId": "{5.fileId}"
+                    }
+                ]
+            }
+        },
+        {
+            "id": 7,
+            "name": "Update MySQL Record",
+            "type": "mysql:execute",
+            "parameters": {
+                "host": "{{MYSQL_HOST}}",
+                "port": "{{MYSQL_PORT}}",
+                "database": "{{MYSQL_DB}}",
+                "user": "{{MYSQL_USER}}",
+                "password": "{{MYSQL_PASS}}",
+                "query": "\nUPDATE legal_requests\nSET state = 'completed',\n    timestamp_completed = NOW()\nWHERE id = :request_id;\n",
+                "parameters": {
+                    "request_id": "{2.lastInsertId}"
+                }
+            }
+        }
+    ],
+    "links": [
+        { "from": 1, "to": 2 },
+        { "from": 2, "to": 3 },
+        { "from": 3, "to": 4 },
+        { "from": 4, "to": 5 },
+        { "from": 5, "to": 6 },
+        { "from": 6, "to": 7 }
+    ]
+}
